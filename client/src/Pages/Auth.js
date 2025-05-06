@@ -254,18 +254,18 @@ export default function AuthPage({ onLoginSuccess }) {
             {isLoginMode ? "Login" : "Create Account"}
           </Typography>
 
-          {registrationSuccess && (
+          {registrationSuccess && !serverError && (
             <Alert severity="success" sx={{ mb: 2 }}>
               Registration successful! Please login with your credentials.
             </Alert>
           )}
-          {serverError && (
+          {serverError && !registrationSuccess && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {serverError}
             </Alert>
           )}
 
-          {invalidCredentials && (
+          {invalidCredentials && !registrationSuccess && !serverError &&(
             <Alert severity="error" sx={{ mb: 2 }}>
               Invalid credentials. Please check your email and password.
             </Alert>
