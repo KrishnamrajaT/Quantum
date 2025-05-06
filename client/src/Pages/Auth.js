@@ -46,7 +46,7 @@ export default function AuthPage({ onLoginSuccess }) {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [invalidCredentials, setInvalidCredentials] = useState(false);
 
-  const API_BASE_URL = "http://localhost:8080";
+  const API_BASE_URL = "https://quantum-server.vercel.app";
 
   // Dynamic validation schema
   const getValidationSchema = () => {
@@ -147,6 +147,7 @@ export default function AuthPage({ onLoginSuccess }) {
 
   const calculatePasswordStrength = (password) => {
     let score = 0;
+    if (!password) return 0;
     if (password.length >= 8) score += 1;
     if (/[A-Z]/.test(password)) score += 1;
     if (/[0-9]/.test(password)) score += 1;
@@ -155,15 +156,21 @@ export default function AuthPage({ onLoginSuccess }) {
     return score;
   };
 
-  const handlePasswordChange = (e) => {
-    formik.handleChange(e);
-    setPasswordScore(calculatePasswordStrength(e.target.value));
-  };
-
   const getPasswordStrengthColor = () => {
     if (passwordScore <= 1) return "#ff4444";
     if (passwordScore <= 3) return "#ffbb33";
     return "#00C851";
+  };
+
+  const getPasswordStrengthText = () => {
+    if (passwordScore <= 1) return "Weak";
+    if (passwordScore <= 3) return "Moderate";
+    return "Strong";
+  };
+
+  const handlePasswordChange = (e) => {
+    formik.handleChange(e);
+    setPasswordScore(calculatePasswordStrength(e.target.value));
   };
 
   const togglePasswordVisibility = () => {
@@ -359,7 +366,7 @@ export default function AuthPage({ onLoginSuccess }) {
                 }
                 disabled={isSubmitting}
               />
-              {formik.values.password && (
+              {/* {formik.values.password && (
                 <Box sx={{ width: "100%", mt: 1, mb: 2 }}>
                   <Box
                     sx={{
@@ -395,7 +402,7 @@ export default function AuthPage({ onLoginSuccess }) {
                       : "Strong"}
                   </Typography>
                 </Box>
-              )}
+              )} */}
             </>
           )}
 
