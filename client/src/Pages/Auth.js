@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
@@ -41,8 +41,8 @@ export default function AuthPage({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordScore, setPasswordScore] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [invalidCredentials, setInvalidCredentials] = useState(false);
 
@@ -184,6 +184,41 @@ export default function AuthPage({ onLoginSuccess }) {
     setPasswordScore(0);
   };
 
+  useEffect(() => {
+    if (registrationSuccess) {
+      setRegistrationSuccess(true);
+      const timer = setTimeout(() => {
+        setRegistrationSuccess(false);
+        setRegistrationSuccess(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [registrationSuccess]);
+
+  // Effect for server error alert
+  useEffect(() => {
+    if (serverError) {
+      setServerError(true);
+      const timer = setTimeout(() => {
+        setServerError(false);
+        setServerError("");
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [serverError]);
+
+  // Effect for invalid credentials alert
+  useEffect(() => {
+    if (invalidCredentials) {
+      setInvalidCredentials(true);
+      const timer = setTimeout(() => {
+        setInvalidCredentials(false);
+        setInvalidCredentials(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [invalidCredentials]);
+
   return (
     <Grid container sx={{ minHeight: "100vh", background: "#f5f7fa" }}>
       {/* Left Panel */}
@@ -254,18 +289,18 @@ export default function AuthPage({ onLoginSuccess }) {
             {isLoginMode ? "Login" : "Create Account"}
           </Typography>
 
-          {registrationSuccess && !serverError && (
+          {registrationSuccess &&  (
             <Alert severity="success" sx={{ mb: 2 }}>
               Registration successful! Please login with your credentials.
             </Alert>
           )}
-          {serverError && !registrationSuccess && (
+          {serverError &&  (
             <Alert severity="error" sx={{ mb: 2 }}>
               {serverError}
             </Alert>
           )}
 
-          {invalidCredentials && !registrationSuccess && !serverError &&(
+          {invalidCredentials &&(
             <Alert severity="error" sx={{ mb: 2 }}>
               Invalid credentials. Please check your email and password.
             </Alert>
