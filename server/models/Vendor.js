@@ -1,8 +1,12 @@
 const mongoose = require("mongoose");
 
 const vendorModel = new mongoose.Schema({
-  username: {
+  userName: {
     type: String,
+    required: true,
+  },
+  mobile: {
+    type: Number,
     required: true,
   },
   email: {

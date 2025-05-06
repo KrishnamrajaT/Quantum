@@ -12,12 +12,12 @@ const Footer = () => {
       <div className="footer-container">
         <div className="footer-section">
           <div className="logo-section">
-            <img src={main_log} width={"250px"} height={"300vh"}/>
+            {/* <img src={main_log} width={"250px"} height={"300vh"}/> */}
           </div>
         </div>
 
         <div className="footer-section">
-          <h4>SERVICES</h4>
+          <h4>About</h4>
           <ul>
             <li className="services">Live Trading</li>
             <li className="services">Classes</li>
@@ -30,7 +30,7 @@ const Footer = () => {
             <li>
               <a
               className="anchor"
-                href="https://wa.me/8886184253"
+                // href="https://wa.me/8886184253"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -40,7 +40,7 @@ const Footer = () => {
             <li>
               <a
               className="anchor"
-                href="mailto:royaltradercherry@gmail.com"
+                // href="mailto:royaltradercherry@gmail.com"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -54,7 +54,7 @@ const Footer = () => {
       <div style={{ textAlign: "center" }}>
         <h5 className="media-text">Follow us on:</h5>
         <a
-          href="https://www.instagram.com/royaltradercherry?igsh=ZnFoanRjdmoxeGZz"
+          // href="https://www.instagram.com/royaltradercherry?igsh=ZnFoanRjdmoxeGZz"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -62,7 +62,7 @@ const Footer = () => {
         </a>
 
         <a
-          href="https://www.facebook.com/people/royaltradercherry/61564518043303/?mibextid=ZbWKwL"
+          // href="https://www.facebook.com/people/royaltradercherry/61564518043303/?mibextid=ZbWKwL"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -70,7 +70,7 @@ const Footer = () => {
         </a>
 
         <a
-          href="https://t.me/ROYALTRADERCHERRY"
+          // href="https://t.me/ROYALTRADERCHERRY"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -78,7 +78,7 @@ const Footer = () => {
         </a>
 
         <a
-          href="https://www.youtube.com/@royaltradercherrry"
+          // href="https://www.youtube.com/@royaltradercherrry"
           target="_blank"
           rel="noopener noreferrer"
         >

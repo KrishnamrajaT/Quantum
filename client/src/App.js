@@ -1,17 +1,23 @@
 import React, { useState } from "react";
+import AuthPage from "./Pages/Auth";
 import Layout from "./Pages/Layout";
-import AutoCarousel from "./Pages/Carousel";
-import Cards from "./Pages/cards";
-import MentorshipCard from "./Pages/MentorshipCard";
-function App() {
 
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // This function would be called upon successful login
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
 
   return (
-    <Layout>
-      <AutoCarousel />
-      <MentorshipCard />
-      <Cards />
-    </Layout>
+    <div className="app">
+      {isAuthenticated ? (
+        <Layout />
+      ) : (
+        <AuthPage onLoginSuccess={handleLoginSuccess} />
+      )}
+    </div>
   );
 }
 

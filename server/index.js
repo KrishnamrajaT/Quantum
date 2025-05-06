@@ -2,7 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const userRoutes = require("./routes/UsersRoutes");
+const vendorRoutes = require("./routes/VenderRoutes");
+require('dotenv').config();
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.use(cors())
 //   res.send("Get Method");
 // });
 
-app.use("/user", userRoutes);
+app.use("/", vendorRoutes);
 
 const PORT = 8080;
 app.listen(PORT, () => {
