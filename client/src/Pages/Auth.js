@@ -45,6 +45,7 @@ export default function AuthPage({ onLoginSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [updatePassSuccess, setUpdatePassSuccess] = useState(false);
   const [invalidCredentials, setInvalidCredentials] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
@@ -127,7 +128,7 @@ export default function AuthPage({ onLoginSuccess }) {
           await handlePasswordReset(values);
           resetForm();
           setShowForgotPassword(false);
-          setRegistrationSuccess(true);
+          setUpdatePassSuccess(true);
         } else if (isLoginMode) {
           await handleLogin(values);
           onLoginSuccess();
@@ -303,18 +304,26 @@ export default function AuthPage({ onLoginSuccess }) {
       setRegistrationSuccess(true);
       const timer = setTimeout(() => {
         setRegistrationSuccess(false);
-        setRegistrationSuccess(false);
-      }, 4000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [registrationSuccess]);
+  useEffect(() => {
+    if (updatePassSuccess) {
+      setUpdatePassSuccess(true);
+      const timer = setTimeout(() => {
+        setUpdatePassSuccess(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [updatePassSuccess]);
 
   // Effect for server error alert
   useEffect(() => {
     if (serverError) {
       const timer = setTimeout(() => {
         setServerError("");
-      }, 4000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [serverError]);
@@ -404,6 +413,11 @@ export default function AuthPage({ onLoginSuccess }) {
           {registrationSuccess && (
             <Alert severity="success" sx={{ mb: 2 }}>
               Registration successful! Please login with your credentials.
+            </Alert>
+          )}
+          {updatePassSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Password is updated! Please login with your credentials.
             </Alert>
           )}
           {serverError && (
