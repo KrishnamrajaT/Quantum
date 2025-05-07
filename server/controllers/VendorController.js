@@ -2,6 +2,41 @@ const vendor = require("../models/Vendor");
 const bcrypt = require("bcryptjs");
 const jsonWebToken = require("jsonwebtoken");
 
+
+// Step 1: Verify email
+const VerifyEmail= async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await vendor.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Email not found' });
+    }
+    res.status(200).json({ message: 'Email verified', email });
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// Step 2: Update password
+const ResetPass= async (req, res) => {
+  const { email, newPassword } = req.body;
+  try {
+    const user = await vendor.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    await user.save();
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+
 const VendorRegistration = async (req, res) => {
   const { userName, mobile, email, password } = req.body;
 
@@ -52,4 +87,4 @@ const VendorLogin = async (req, res) => {
   }
 };
 
-module.exports = { VendorRegistration, VendorLogin };
+module.exports = { VendorRegistration, VendorLogin, ResetPass,VerifyEmail };

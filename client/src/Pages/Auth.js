@@ -41,15 +41,37 @@ export default function AuthPage({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordScore, setPasswordScore] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
+  const [isRegMode, setIsRegMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState(false);
+  const [serverError, setServerError] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [invalidCredentials, setInvalidCredentials] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailVerificationText, setEmailVerificationText] = useState("");
 
   const API_BASE_URL = "https://quantum-server.vercel.app";
 
   // Dynamic validation schema
   const getValidationSchema = () => {
+    if (showForgotPassword) {
+      return Yup.object({
+        email: Yup.string()
+          .email("Invalid email address")
+          .required("Email is required"),
+        newPassword: Yup.string()
+          .min(8, "Password must be at least 8 characters")
+          .matches(/[a-z]/, "Must contain at least one lowercase letter")
+          .matches(/[A-Z]/, "Must contain at least one uppercase letter")
+          .matches(/[0-9]/, "Must contain at least one number")
+          .matches(
+            /[^A-Za-z0-9]/,
+            "Must contain at least one special character"
+          )
+          .required("Password is required"),
+      });
+    }
+
     return Yup.object({
       email: Yup.string()
         .email("Invalid email address")
@@ -74,7 +96,7 @@ export default function AuthPage({ onLoginSuccess }) {
               .matches(/[A-Z]/, "Must contain at least one uppercase letter")
               .matches(/[0-9]/, "Must contain at least one number")
               .matches(
-                /[^a-zA-Z0-9]/,
+                /[^A-Za-z0-9]/,
                 "Must contain at least one special character"
               )
               .required("Password is required"),
@@ -91,59 +113,118 @@ export default function AuthPage({ onLoginSuccess }) {
       mobile: "",
       email: "",
       password: "",
+      newPassword: "",
       confirmPassword: "",
     },
     validationSchema: getValidationSchema(),
-    onSubmit: async (values) => {
-      setIsSubmitting(true);
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      setSubmitting(true);
       setServerError("");
       setInvalidCredentials(false);
 
       try {
-        if (isLoginMode) {
-          // Login flow
-          const response = await axios.post(`${API_BASE_URL}/login`, {
-            email: values.email,
-            password: values.password,
-          });
-
-          localStorage.setItem("authToken", response.data.token);
-          localStorage.setItem("user", JSON.stringify(response.data.user));
-          onLoginSuccess(); // Redirect to parent on login success
-        } else {
-          // Registration flow
-          await axios.post(`${API_BASE_URL}/register`, {
-            userName: values.name,
-            mobile: values.mobile,
-            email: values.email,
-            password: values.password,
-          });
-
+        if (showForgotPassword) {
+          await handlePasswordReset(values);
+          resetForm();
+          setShowForgotPassword(false);
           setRegistrationSuccess(true);
-          setIsLoginMode(true);
-          formik.resetForm({
+        } else if (isLoginMode) {
+          await handleLogin(values);
+          onLoginSuccess();
+        } else {
+          await handleRegistration(values);
+          resetForm({
             values: {
               ...formik.initialValues,
               email: values.email,
             },
           });
+          setRegistrationSuccess(true);
+          setIsLoginMode(true);
         }
       } catch (error) {
-        if (isLoginMode && error.response?.status === 401) {
-          setInvalidCredentials(true);
-        } else {
-          const errorMessage =
-            error.response?.data?.message ||
-            (isLoginMode
-              ? "Login failed. Please try again."
-              : "Registration failed. Please try again.");
-          setServerError(errorMessage);
-        }
+        handleApiError(error);
       } finally {
-        setIsSubmitting(false);
+        setSubmitting(false);
       }
     },
   });
+
+  // Separate API call functions
+  const handlePasswordReset = async (values) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/reset-password`, {
+        email: values.email,
+        newPassword: values.newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 400) {
+        throw new Error("Invalid reset token or expired");
+      } else if (error.response?.status === 404) {
+        throw new Error("Email not found");
+      } else {
+        throw new Error("Failed to reset password. Please try again.");
+      }
+    }
+  };
+
+  const handleLogin = async (values) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
+        email: values.email,
+        password: values.password,
+      });
+      localStorage.setItem("authToken", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error("invalid_credentials");
+      } else if (error.response?.status === 403) {
+        throw new Error("Account not verified");
+      } else {
+        throw new Error("Login failed. Please try again.");
+      }
+    }
+  };
+
+  const handleRegistration = async (values) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/register`, {
+        userName: values.name,
+        mobile: values.mobile,
+        email: values.email,
+        password: values.password,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 400) {
+        throw new Error("User already exists");
+      } else if (error.response?.status === 422) {
+        throw new Error(
+          "Validation failed: " + error.response.data.errors.join(", ")
+        );
+      } else {
+        throw new Error("Registration failed. Please try again.");
+      }
+    }
+  };
+
+  // Centralized error handler
+  const handleApiError = (error) => {
+    console.error("API Error:", error.message);
+
+    if (error.message === "invalid_credentials") {
+      setServerError("Invalid email or password");
+    } else if (error.message.includes("already exists")) {
+      setServerError("Email already registered");
+    } else if (error.message.includes("Invalid reset token")) {
+      setServerError("Reset link expired or invalid");
+    } else {
+      setServerError(error.message || "An unexpected error occurred");
+    }
+  };
 
   const calculatePasswordStrength = (password) => {
     let score = 0;
@@ -180,8 +261,41 @@ export default function AuthPage({ onLoginSuccess }) {
   const toggleAuthMode = () => {
     setIsLoginMode(!isLoginMode);
     formik.resetForm();
-    setServerError("");
     setPasswordScore(0);
+  };
+
+  const verifyEmail = async (email) => {
+    try {
+      // Simulate API call - replace with actual verification
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // In a real app, you would check if email exists in your database
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+      if (isValid) {
+        setEmailVerified(true);
+        // setEmailVerificationText("Email verified");
+      } else {
+        setEmailVerified(false);
+        setEmailVerificationText("Invalid email format");
+      }
+    } catch (error) {
+      setEmailVerified(false);
+      setEmailVerificationText("Verification failed");
+    }
+  };
+
+  // Handle email input change with debounce
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    formik.handleChange(e);
+
+    if (email.length > 3) {
+      verifyEmail(email);
+    } else {
+      setEmailVerified(false);
+      setEmailVerificationText("");
+    }
   };
 
   useEffect(() => {
@@ -198,9 +312,7 @@ export default function AuthPage({ onLoginSuccess }) {
   // Effect for server error alert
   useEffect(() => {
     if (serverError) {
-      setServerError(true);
       const timer = setTimeout(() => {
-        setServerError(false);
         setServerError("");
       }, 4000);
       return () => clearTimeout(timer);
@@ -289,96 +401,184 @@ export default function AuthPage({ onLoginSuccess }) {
             {isLoginMode ? "Login" : "Create Account"}
           </Typography>
 
-          {registrationSuccess &&  (
+          {registrationSuccess && (
             <Alert severity="success" sx={{ mb: 2 }}>
               Registration successful! Please login with your credentials.
             </Alert>
           )}
-          {serverError &&  (
+          {serverError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {serverError}
             </Alert>
           )}
 
-          {invalidCredentials &&(
+          {invalidCredentials && (
             <Alert severity="error" sx={{ mb: 2 }}>
               Invalid credentials. Please check your email and password.
             </Alert>
           )}
+          {!showForgotPassword ? (
+            <>
+              {!isLoginMode && (
+                <>
+                  <TextField
+                    fullWidth
+                    name="name"
+                    label="Full Name"
+                    variant="outlined"
+                    margin="normal"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.name && Boolean(formik.errors.name)}
+                    helperText={formik.touched.name && formik.errors.name}
+                    disabled={isSubmitting}
+                  />
+                  <TextField
+                    fullWidth
+                    name="mobile"
+                    label="Mobile"
+                    variant="outlined"
+                    margin="normal"
+                    value={formik.values.mobile}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.mobile && Boolean(formik.errors.mobile)
+                    }
+                    helperText={formik.touched.mobile && formik.errors.mobile}
+                    disabled={isSubmitting}
+                  />
+                </>
+              )}
 
-          {!isLoginMode && (
+              <TextField
+                fullWidth
+                name="email"
+                label="Email"
+                variant="outlined"
+                margin="normal"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+                disabled={isSubmitting}
+              />
+
+              <TextField
+                fullWidth
+                name="password"
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                variant="outlined"
+                margin="normal"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
+                helperText={formik.touched.password && formik.errors.password}
+                disabled={isSubmitting}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={togglePasswordVisibility}
+                        edge="end"
+                        disabled={isSubmitting}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </>
+          ) : (
             <>
               <TextField
                 fullWidth
-                name="name"
-                label="Full Name"
+                name="email"
+                label="Email"
                 variant="outlined"
                 margin="normal"
-                value={formik.values.name}
-                onChange={formik.handleChange}
+                value={formik.values.email}
+                onChange={handleEmailChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.name && Boolean(formik.errors.name)}
-                helperText={formik.touched.name && formik.errors.name}
-                disabled={isSubmitting}
+                error={formik.touched.email && Boolean(formik.errors.email)}
               />
+
+              {emailVerificationText && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: emailVerified ? "#00C851" : "#ff4444",
+                    display: "block",
+                    mt: -1,
+                    mb: 1,
+                  }}
+                >
+                  {emailVerificationText}
+                </Typography>
+              )}
+
               <TextField
                 fullWidth
-                name="mobile"
-                label="Mobile"
+                name="newPassword"
+                label="New Password"
+                type={showPassword ? "text" : "password"}
                 variant="outlined"
                 margin="normal"
-                value={formik.values.mobile}
+                value={formik.values.newPassword}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.touched.mobile && Boolean(formik.errors.mobile)}
-                helperText={formik.touched.mobile && formik.errors.mobile}
-                disabled={isSubmitting}
+                error={
+                  formik.touched.newPassword &&
+                  Boolean(formik.errors.newPassword)
+                }
+                helperText={
+                  formik.touched.newPassword && formik.errors.newPassword
+                }
               />
+
+              <GradientButton
+                fullWidth
+                sx={{ mt: 2 }}
+                type="submit" // Make sure this is type="submit"
+                disabled={!emailVerified || formik.isSubmitting}
+              >
+                {formik.isSubmitting ? "Resetting..." : "Reset Password"}
+              </GradientButton>
+
+              <Button
+                fullWidth
+                variant="text"
+                sx={{ mt: 2 }}
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setEmailVerified(false);
+                  setEmailVerificationText("");
+                }}
+              >
+                Back to Login
+              </Button>
             </>
           )}
 
-          <TextField
-            fullWidth
-            name="email"
-            label="Email"
-            variant="outlined"
-            margin="normal"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.email && Boolean(formik.errors.email)}
-            helperText={formik.touched.email && formik.errors.email}
-            disabled={isSubmitting}
-          />
-
-          <TextField
-            fullWidth
-            name="password"
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            variant="outlined"
-            margin="normal"
-            value={formik.values.password}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.password && Boolean(formik.errors.password)}
-            helperText={formik.touched.password && formik.errors.password}
-            disabled={isSubmitting}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={togglePasswordVisibility}
-                    edge="end"
-                    disabled={isSubmitting}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          {isLoginMode && !showForgotPassword && (
+            <Box sx={{ textAlign: "right", mt: 1 }}>
+              <Button
+                variant="text"
+                sx={{ color: "#1e3c72", fontWeight: "bold" }}
+                onClick={() => setShowForgotPassword(true)}
+              >
+                Forgot password?
+              </Button>
+            </Box>
+          )}
 
           {!isLoginMode && (
             <>
@@ -397,7 +597,8 @@ export default function AuthPage({ onLoginSuccess }) {
                   Boolean(formik.errors.confirmPassword)
                 }
                 helperText={
-                  formik.touched.confirmPassword && formik.errors.confirmPassword
+                  formik.touched.confirmPassword &&
+                  formik.errors.confirmPassword
                 }
                 disabled={isSubmitting}
               />
@@ -441,37 +642,40 @@ export default function AuthPage({ onLoginSuccess }) {
             </>
           )}
 
-          <GradientButton
-            fullWidth
-            sx={{ mt: 2 }}
-            type="submit"
-            disabled={isSubmitting || !formik.isValid}
-          >
-            {isSubmitting ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : isLoginMode ? (
-              "Continue"
-            ) : (
-              "Create Account"
-            )}
-          </GradientButton>
+          {!showForgotPassword && (
+            <>
+              <GradientButton
+                fullWidth
+                sx={{ mt: 2 }}
+                type="submit"
+                disabled={isSubmitting || !formik.isValid}
+              >
+                {isSubmitting ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : isLoginMode ? (
+                  "Continue"
+                ) : (
+                  "Create Account"
+                )}
+              </GradientButton>
 
-          <Button
-            fullWidth
-            variant="outlined"
-            sx={{ mt: 2, borderRadius: "30px" }}
-            onClick={() => {
-              setRegistrationSuccess(false);
-              setInvalidCredentials(false);
-              setServerError("");
-              toggleAuthMode();
-            }}
-            disabled={isSubmitting}
-          >
-            {isLoginMode
-              ? "Create New Account"
-              : "Already have an account? Login"}
-          </Button>
+              <Button
+                fullWidth
+                variant="outlined"
+                sx={{ mt: 2, borderRadius: "30px" }}
+                onClick={() => {
+                  setRegistrationSuccess(false);
+                  setInvalidCredentials(false);
+                  toggleAuthMode();
+                }}
+                disabled={isSubmitting}
+              >
+                {isLoginMode
+                  ? "Create New Account"
+                  : "Already have an account? Login"}
+              </Button>
+            </>
+          )}
         </MotionBox>
       </Grid>
     </Grid>
