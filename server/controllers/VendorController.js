@@ -43,7 +43,10 @@ const VendorRegistration = async (req, res) => {
   try {
     const vendorEmail = await vendor.findOne({ email });
     if (vendorEmail) {
-      return res.status(400).json("Already registered please login");
+      return res.status(400).json("Email Already registered please login");
+    }const vendorMobile = await vendor.findOne({ mobile });
+    if (vendorMobile) {
+      return res.status(400).json("Mobile number is already in use ");
     }
     const hasshedPass = await bcrypt.hash(password, 10);
     const newVendor = new vendor({

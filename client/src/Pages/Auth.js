@@ -52,6 +52,7 @@ export default function AuthPage({ onLoginSuccess }) {
   const [emailVerificationText, setEmailVerificationText] = useState("");
 
   const API_BASE_URL = "https://quantum-server.vercel.app";
+  // const API_BASE_URL = "http://localhost:8080";
 
   // Dynamic validation schema
   const getValidationSchema = () => {
@@ -201,7 +202,7 @@ export default function AuthPage({ onLoginSuccess }) {
       return response.data;
     } catch (error) {
       if (error.response?.status === 400) {
-        throw new Error("User already exists");
+        throw new Error(error.response?.data);
       } else if (error.response?.status === 422) {
         throw new Error(
           "Validation failed: " + error.response.data.errors.join(", ")
@@ -218,10 +219,8 @@ export default function AuthPage({ onLoginSuccess }) {
 
     if (error.message === "invalid_credentials") {
       setServerError("Invalid email or password");
-    } else if (error.message.includes("already exists")) {
-      setServerError("Email already registered");
     } else if (error.message.includes("Invalid reset token")) {
-      setServerError("Reset link expired or invalid");
+      setServerError("Email not found");
     } else {
       setServerError(error.message || "An unexpected error occurred");
     }

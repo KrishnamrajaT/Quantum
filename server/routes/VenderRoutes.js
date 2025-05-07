@@ -9,5 +9,4 @@ router.post("/reset-password", vendorController.ResetPass);
 
 
 
-
 module.exports = router;
