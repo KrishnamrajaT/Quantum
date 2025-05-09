@@ -53,8 +53,8 @@ export default function AuthPage({ onLoginSuccess }) {
   const [emailVerificationText, setEmailVerificationText] = useState("");
   const navigate = useNavigate();
 
-  // const API_BASE_URL = "https://quantum-server.vercel.app";
-  const API_BASE_URL = "http://localhost:8080";
+  const API_BASE_URL = "https://quantum-server.vercel.app";
+  // const API_BASE_URL = "http://localhost:8080";
 
   // Dynamic validation schema
   const getValidationSchema = () => {
