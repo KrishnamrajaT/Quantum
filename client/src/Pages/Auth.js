@@ -18,6 +18,7 @@ import {
 import { motion } from "framer-motion";
 import { styled } from "@mui/system";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 const MotionBox = motion(Box);
 
@@ -50,9 +51,10 @@ export default function AuthPage({ onLoginSuccess }) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [emailVerificationText, setEmailVerificationText] = useState("");
+  const navigate = useNavigate();
 
-  const API_BASE_URL = "https://quantum-server.vercel.app";
-  // const API_BASE_URL = "http://localhost:8080";
+  // const API_BASE_URL = "https://quantum-server.vercel.app";
+  const API_BASE_URL = "http://localhost:8080";
 
   // Dynamic validation schema
   const getValidationSchema = () => {
@@ -132,7 +134,6 @@ export default function AuthPage({ onLoginSuccess }) {
           setUpdatePassSuccess(true);
         } else if (isLoginMode) {
           await handleLogin(values);
-          onLoginSuccess();
         } else {
           await handleRegistration(values);
           resetForm({
@@ -178,7 +179,8 @@ export default function AuthPage({ onLoginSuccess }) {
         password: values.password,
       });
       localStorage.setItem("authToken", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      localStorage.setItem("user", JSON.stringify(response.data.vendor));
+      navigate("/main-page");
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
@@ -364,13 +366,13 @@ export default function AuthPage({ onLoginSuccess }) {
             gutterBottom
             sx={{ color: "#444" }}
           >
-            Welcome to <span style={{ color: "#1e3c72" }}>Quantum</span>
+            Welcome to <span style={{ color: "#1e3c72" }}>Gam Fam</span>
           </Typography>
           <Typography variant="h6" gutterBottom sx={{ color: "#444" }}>
-            Wealth Tech – where
+            Find The Best Stocks
           </Typography>
           <Typography variant="h6" gutterBottom sx={{ color: "#444" }}>
-            <i>Mathematics meets Market Mastery</i>
+            <i>SEBI Registered Advisory</i>
           </Typography>
         </MotionBox>
       </Grid>

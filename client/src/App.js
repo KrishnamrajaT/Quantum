@@ -1,23 +1,29 @@
-import React, { useState } from "react";
-import AuthPage from "./Pages/Auth";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./Pages/Layout";
+import AuthPage from "./Pages/Auth";
+// import NotFound from './pages/NotFound';
+import AuthProtectedRoute from "./Routes/AuthProtectedRoute";
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // This function would be called upon successful login
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
-  };
-
   return (
-    <div className="app">
-      {isAuthenticated ? (
-        <Layout />
-      ) : (
-        <AuthPage onLoginSuccess={handleLoginSuccess} />
-      )}
-    </div>
+    <Router>
+      <Routes>
+        <Route index element={<AuthPage />} />
+        {/* Routes with header and footer */}
+        <Route
+          path="main-page"
+          element={
+            <AuthProtectedRoute>
+              <Layout />
+            </AuthProtectedRoute>
+          }
+        >
+          {/* <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} /> */}
+          {/* Add more public routes here */}
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 

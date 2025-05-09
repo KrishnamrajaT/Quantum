@@ -67,12 +67,13 @@ const VendorLogin = async (req, res) => {
 
   try {
     const vendorDetails = await vendor.findOne({ email });
-    if (
-      !vendorDetails ||
-      !(await bcrypt.compare(password, vendorDetails.password))
-    ) {
+    if (!vendorDetails || !(await bcrypt.compare(password, vendorDetails.password))) {
       return res.status(401).json("Invalid credentials");
     }
+
+    // Convert Mongoose document to plain object and remove password
+    const vendorWithoutPassword = vendorDetails.toObject();
+    delete vendorWithoutPassword.password;
 
     const token = jsonWebToken.sign(
       { id: vendorDetails._id, email: vendorDetails.email },
@@ -83,6 +84,7 @@ const VendorLogin = async (req, res) => {
     res.status(200).json({
       message: "Login Successful",
       token,
+      vendor: vendorWithoutPassword
     });
   } catch (error) {
     console.error(error);
